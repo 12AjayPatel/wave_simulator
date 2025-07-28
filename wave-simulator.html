@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Wave Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: hsl(220, 20%, 4%);
+            --bg-secondary: hsl(220, 20%, 6%);
+            --text-primary: hsl(210, 40%, 98%);
+            --text-secondary: hsl(215, 20%, 65%);
+            --border: hsl(220, 20%, 20%);
+            --primary: hsl(197, 100%, 50%);
+            --accent: hsl(285, 100%, 65%);
+            --wave-grid: hsl(220, 20%, 20%);
+            --gradient-canvas: linear-gradient(180deg, hsl(220, 20%, 4%), hsl(220, 20%, 8%));
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .wave-controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            max-width: 100%;
+        }
+
+        .canvas-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        #waveCanvas {
+            width: 100%;
+            height: 400px;
+            border: 1px solid var(--wave-grid);
+            border-radius: 0.5rem;
+            background: var(--gradient-canvas);
+            display: block;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            color: var(--bg-primary);
+        }
+
+        .btn.active {
+            background: var(--primary);
+            color: var(--bg-primary);
+        }
+
+        .btn.accent {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn.accent:hover {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .wave-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+
+        .wave-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .wave-badge {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid currentColor;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .wave-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+        }
+
+        .btn-toggle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--bg-primary);
+        }
+
+        .btn-toggle.off {
+            background: transparent;
+            color: var(--primary);
+        }
+
+        .btn-remove {
+            background: hsl(0, 84%, 60%);
+            border-color: hsl(0, 84%, 60%);
+            color: white;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .select {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .add-wave-card {
+            background: transparent;
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .wave-controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Wave Simulator</h1>
+            <p class="subtitle">Interactive mathematical wave visualization</p>
+        </div>
+
+        <div class="main-content">
+            <div class="canvas-section">
+                <canvas id="waveCanvas"></canvas>
+                <div class="controls-row">
+                    <button id="playPauseBtn" class="btn">
+                        <span id="playIcon">⏸</span>
+                    </button>
+                    <button id="resetBtn" class="btn accent">
+                        <span>↻</span>
+                    </button>
+                    <button id="sumBtn" class="btn">Sum Wave</button>
+                </div>
+            </div>
+
+            <div class="wave-controls-grid" id="waveControls">
+                <!-- Wave controls will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WaveSimulator {
+            constructor() {
+                this.canvas = document.getElementById('waveCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.animationId = null;
+                this.time = 0;
+                this.isPlaying = true;
+                this.showSum = false;
+                
+                this.waves = [
+                    {
+                        id: '1',
+                        amplitude: 50,
+                        frequency: 1,
+                        phase: 0,
+                        type: 'sine',
+                        color: 'hsl(197, 100%, 50%)',
+                        enabled: true
+                    }
+                ];
+
+                this.waveColors = [
+                    'hsl(197, 100%, 50%)',
+                    'hsl(285, 100%, 65%)',
+                    'hsl(165, 100%, 50%)',
+                    'hsl(45, 100%, 50%)',
+                    'hsl(15, 100%, 50%)'
+                ];
+
+                this.init();
+            }
+
+            init() {
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.renderWaveControls();
+                this.animate();
+                
+                window.addEventListener('resize', () => this.setupCanvas());
+            }
+
+            setupCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width * window.devicePixelRatio;
+                this.canvas.height = rect.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                this.canvas.style.width = rect.width + 'px';
+                this.canvas.style.height = rect.height + 'px';
+            }
+
+            setupEventListeners() {
+                document.getElementById('playPauseBtn').addEventListener('click', () => {
+                    this.isPlaying = !this.isPlaying;
+                    document.getElementById('playIcon').textContent = this.isPlaying ? '⏸' : '▶';
+                });
+
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.time = 0;
+                });
+
+                document.getElementById('sumBtn').addEventListener('click', () => {
+                    this.showSum = !this.showSum;
+                    const btn = document.getElementById('sumBtn');
+                    btn.classList.toggle('active', this.showSum);
+                });
+            }
+
+            generateWaveFunction(wave) {
+                const { amplitude, frequency, phase, type } = wave;
+                
+                return (x, time) => {
+                    const argument = frequency * x + phase + time;
+                    
+                    switch (type) {
+                        case 'sine':
+                            return amplitude * Math.sin(argument);
+                        case 'cosine':
+                            return amplitude * Math.cos(argument);
+                        case 'square':
+                            return amplitude * Math.sign(Math.sin(argument));
+                        case 'triangle':
+                            return amplitude * (2 / Math.PI) * Math.asin(Math.sin(argument));
+                        case 'sawtooth':
+                            return amplitude * (2 / Math.PI) * Math.atan(Math.tan(argument / 2));
+                        default:
+                            return 0;
+                    }
+                };
+            }
+
+            drawGrid() {
+                const width = this.canvas.width / window.devicePixelRatio;
+                const height = this.canvas.height / window.devicePixelRatio;
+                
+                this.ctx.strokeStyle = 'hsl(220, 20%, 20%)';
+                this.ctx.lineWidth = 1;
+                
+                const gridSpacing = 40;
+                const centerY = height / 2;
+                
+                // Vertical grid lines
+                for (let x = 0; x <= width; x += gridSpacing) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, height);
+                    this.ctx.stroke();
+                }
+                
+                // Horizontal grid lines
+                for (let y = 0; y <= height; y += gridSpacing) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(width, y);
+                    this.ctx.stroke();
+                }
+                
+                // Center line
+                this.ctx.strokeStyle = 'hsl(220, 20%, 30%)';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, centerY);
+                this.ctx.lineTo(width, centerY);
+                this.ctx.stroke();
+            }
+
+            drawWave(wave) {
+                if (!wave.enabled) return null;
+                
+                const width = this.canvas.width / window.devicePixelRatio;
+                const height = this.canvas.height / window.devicePixelRatio;
+                const waveFunction = this.generateWaveFunction(wave);
+                const centerY = height / 2;
+                
+                this.ctx.strokeStyle = wave.color;
+                this.ctx.lineWidth = 3;
+                this.ctx.shadowColor = wave.color;
+                this.ctx.shadowBlur = 10;
+                
+                this.ctx.beginPath();
+                
+                for (let x = 0; x < width; x += 2) {
+                    const waveX = (x / width) * 8 * Math.PI;
+                    const y = centerY - waveFunction(waveX, this.time);
+                    
+                    if (x === 0) {
+                        this.ctx.moveTo(x, y);
+                    } else {
+                        this.ctx.lineTo(x, y);
+                    }
+                }
+                
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+            }
+
+            drawSumWave() {
+                const enabledWaves = this.waves.filter(w => w.enabled);
+                if (enabledWaves.length < 2 || !this.showSum) return;
+                
+                const width = this.canvas.width / window.devicePixelRatio;
+                const height = this.canvas.height / window.devicePixelRatio;
+                const centerY = height / 2;
+                
+                this.ctx.strokeStyle = 'hsl(0, 0%, 90%)';
+                this.ctx.lineWidth = 4;
+                this.ctx.shadowColor = 'hsl(0, 0%, 90%)';
+                this.ctx.shadowBlur = 15;
+                
+                this.ctx.beginPath();
+                
+                for (let x = 0; x < width; x += 2) {
+                    const waveX = (x / width) * 8 * Math.PI;
+                    let sumY = 0;
+                    
+                    enabledWaves.forEach(wave => {
+                        const waveFunction = this.generateWaveFunction(wave);
+                        sumY += waveFunction(waveX, this.time);
+                    });
+                    
+                    const y = centerY - sumY;
+                    
+                    if (x === 0) {
+                        this.ctx.moveTo(x, y);
+                    } else {
+                        this.ctx.lineTo(x, y);
+                    }
+                }
+                
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+            }
+
+            animate() {
+                const width = this.canvas.width / window.devicePixelRatio;
+                const height = this.canvas.height / window.devicePixelRatio;
+                
+                // Clear canvas
+                this.ctx.fillStyle = 'hsl(220, 20%, 4%)';
+                this.ctx.fillRect(0, 0, width, height);
+                
+                // Draw grid
+                this.drawGrid();
+                
+                // Draw individual waves
+                this.waves.forEach(wave => {
+                    this.drawWave(wave);
+                });
+                
+                // Draw sum wave
+                this.drawSumWave();
+                
+                if (this.isPlaying) {
+                    this.time += 0.05;
+                }
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+
+            updateWave(id, updates) {
+                this.waves = this.waves.map(wave => 
+                    wave.id === id ? { ...wave, ...updates } : wave
+                );
+            }
+
+            addWave() {
+                const newId = Date.now().toString();
+                const colorIndex = this.waves.length % this.waveColors.length;
+                this.waves.push({
+                    id: newId,
+                    amplitude: 30,
+                    frequency: 1,
+                    phase: 0,
+                    type: 'sine',
+                    color: this.waveColors[colorIndex],
+                    enabled: true
+                });
+                this.renderWaveControls();
+            }
+
+            removeWave(id) {
+                if (this.waves.length > 1) {
+                    this.waves = this.waves.filter(wave => wave.id !== id);
+                    this.renderWaveControls();
+                }
+            }
+
+            renderWaveControls() {
+                const container = document.getElementById('waveControls');
+                container.innerHTML = '';
+
+                this.waves.forEach((wave, index) => {
+                    const waveCard = document.createElement('div');
+                    waveCard.className = 'wave-card';
+                    waveCard.innerHTML = `
+                        <div class="wave-header">
+                            <div class="wave-badge" style="color: ${wave.color}">
+                                Wave ${index + 1}
+                            </div>
+                            <div class="wave-controls">
+                                <button class="btn btn-small btn-toggle ${wave.enabled ? '' : 'off'}" onclick="simulator.toggleWave('${wave.id}')">
+                                    ${wave.enabled ? 'ON' : 'OFF'}
+                                </button>
+                                ${this.waves.length > 1 ? `
+                                    <button class="btn btn-small btn-remove" onclick="simulator.removeWave('${wave.id}')">
+                                        ×
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label class="control-label">Type</label>
+                            <select class="select" onchange="simulator.updateWave('${wave.id}', {type: this.value})">
+                                <option value="sine" ${wave.type === 'sine' ? 'selected' : ''}>Sine</option>
+                                <option value="cosine" ${wave.type === 'cosine' ? 'selected' : ''}>Cosine</option>
+                                <option value="square" ${wave.type === 'square' ? 'selected' : ''}>Square</option>
+                                <option value="triangle" ${wave.type === 'triangle' ? 'selected' : ''}>Triangle</option>
+                                <option value="sawtooth" ${wave.type === 'sawtooth' ? 'selected' : ''}>Sawtooth</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Amplitude: ${wave.amplitude}</label>
+                            <input type="range" class="slider" min="0" max="100" value="${wave.amplitude}" 
+                                   oninput="simulator.updateWave('${wave.id}', {amplitude: parseInt(this.value)}); this.previousElementSibling.textContent = 'Amplitude: ' + this.value">
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Frequency: ${wave.frequency.toFixed(1)}</label>
+                            <input type="range" class="slider" min="0.1" max="5" step="0.1" value="${wave.frequency}" 
+                                   oninput="simulator.updateWave('${wave.id}', {frequency: parseFloat(this.value)}); this.previousElementSibling.textContent = 'Frequency: ' + parseFloat(this.value).toFixed(1)">
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Phase: ${wave.phase.toFixed(1)}</label>
+                            <input type="range" class="slider" min="0" max="6.28" step="0.1" value="${wave.phase}" 
+                                   oninput="simulator.updateWave('${wave.id}', {phase: parseFloat(this.value)}); this.previousElementSibling.textContent = 'Phase: ' + parseFloat(this.value).toFixed(1)">
+                        </div>
+                    `;
+                    container.appendChild(waveCard);
+                });
+
+                // Add wave button
+                const addCard = document.createElement('div');
+                addCard.className = 'add-wave-card';
+                addCard.innerHTML = `
+                    <button class="btn-add" onclick="simulator.addWave()">
+                        + Add Wave
+                    </button>
+                `;
+                container.appendChild(addCard);
+            }
+
+            toggleWave(id) {
+                const wave = this.waves.find(w => w.id === id);
+                if (wave) {
+                    wave.enabled = !wave.enabled;
+                    this.renderWaveControls();
+                }
+            }
+        }
+
+        // Initialize the simulator
+        let simulator;
+        window.addEventListener('DOMContentLoaded', () => {
+            simulator = new WaveSimulator();
+        });
+    </script>
+</body>
+</html>
